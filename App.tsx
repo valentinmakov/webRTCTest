@@ -24,7 +24,18 @@ const webRTCConfig: RTCPeerConnectionConfiguration = {
 	iceServers: [],
 };
 
-const initConnectionCreation = async (peerConnection: RTCPeerConnection): Promise<void> => {
+const initConnectionCreation = async (
+    peerConnection: RTCPeerConnection,
+    setChannel: React.Dispatch<React.SetStateAction<RTCDataChannel | null>>,
+): Promise<void> => {
+    const channel: RTCDataChannel = peerConnection.createDataChannel('channel') as unknown as RTCDataChannel;
+    channel.onopen = () => {
+        Alert.alert('channel is open');
+    };
+    channel.onclose = () => {
+        Alert.alert('Channel closed');
+    };
+    setChannel(channel);
     const sdp: RTCSessionDescriptionType = await peerConnection.createOffer();
     peerConnection.setLocalDescription(sdp);
 };
@@ -32,9 +43,10 @@ const initConnectionCreation = async (peerConnection: RTCPeerConnection): Promis
 const finalizeConnectionCreation = async (
     peerConnection: RTCPeerConnection,
     peerDeviceUrl: string,
-    setIsPCEstablished: React.Dispatch<React.SetStateAction<boolean>>,
 ): Promise<void> => {
+    Alert.alert('finalizeConnectionCreation');
     const fullSDP: RTCSessionDescriptionType = await peerConnection.createOffer();
+    Alert.alert('fullSDP', JSON.stringify(fullSDP));
 	await peerConnection.setLocalDescription(fullSDP);
     try {
         const sdpAnswerResponse = await fetch(peerDeviceUrl, {
@@ -42,8 +54,7 @@ const finalizeConnectionCreation = async (
             body: JSON.stringify(fullSDP),
         });
         const sdpAnswer: RTCSessionDescriptionType = await sdpAnswerResponse.json();
-        await peerConnection.setRemoteDescription(sdpAnswer);
-        setIsPCEstablished(true);
+        peerConnection.setRemoteDescription(sdpAnswer);
     } catch (error) {
         Alert.alert('Could not get SDP answer: Fetch error', JSON.stringify(error));
     }
@@ -51,24 +62,7 @@ const finalizeConnectionCreation = async (
 
 const App: React.FC = (): React.ReactElement => {
     const [pc, setPc] = React.useState<RTCPeerConnection | null>(null);
-    const [isPCEstablished, setIsPCEstablished] = React.useState<boolean>(false);
     const [channel, setChannel] = React.useState<RTCDataChannel | null>(null);
-
-    React.useEffect(
-        () => {
-            if (isPCEstablished && pc) {
-                const channel: RTCDataChannel = pc.createDataChannel('channel') as unknown as RTCDataChannel;
-                channel.onopen = () => {
-                    Alert.alert('channel is open');
-                };
-                channel.onclose = () => {
-                    Alert.alert('Channel closed');
-                };
-                setChannel(channel);
-            }
-        },
-        [isPCEstablished],
-    );
 
     React.useEffect(
         () => {
@@ -93,13 +87,13 @@ const App: React.FC = (): React.ReactElement => {
         setPc(pc);
         pc.onicecandidate = (event: EventOnCandidate): void => {
 			if (!event.candidate) {
-				finalizeConnectionCreation(pc, PEER_DEVICE_URL, setIsPCEstablished);
+				finalizeConnectionCreation(pc, PEER_DEVICE_URL);
 			}
 		};
 		pc.onconnectionstatechange = () => {
 			Alert.alert('RTC connection status', pc.connectionState);
 		};
-        initConnectionCreation(pc);
+        initConnectionCreation(pc, setChannel);
     };
     
     const closeChannel = (): void => {
@@ -121,25 +115,25 @@ const App: React.FC = (): React.ReactElement => {
     return (
         <View style={{justifyContent: 'center', alignItems: 'center', backgroundColor: 'white', flex: 1}}>
             <TouchableOpacity
-                style={{width: 400, height: 40, paddingBottom: 10, backgroundColor: pc ? 'grey' : 'green', justifyContent: 'center', alignItems: 'center'}}
+                style={{width: 200, height: 40, marginBottom: 10, backgroundColor: pc ? 'grey' : 'green', justifyContent: 'center', alignItems: 'center'}}
                 onPress={createNewConnection}
                 disabled={pc ? true : false}
             >
                 <Text>Create WebRTC conection and channel</Text>
             </TouchableOpacity>
             <TouchableOpacity
-                style={{width: 400, height: 40, paddingBottom: 10, backgroundColor: channel ? 'green' : 'grey', justifyContent: 'center', alignItems: 'center'}}
+                style={{width: 200, height: 40, marginBottom: 10, backgroundColor: channel ? 'green' : 'grey', justifyContent: 'center', alignItems: 'center'}}
                 onPress={closeChannel}
                 disabled={channel ? false : true}
             >
                 <Text>Close channel</Text>
             </TouchableOpacity>
             <TouchableOpacity
-                style={{width: 400, height: 40, paddingBottom: 10, backgroundColor: pc ? 'green' : 'grey', justifyContent: 'center', alignItems: 'center'}}
+                style={{width: 200, height: 40, marginBottom: 10, backgroundColor: pc ? 'green' : 'grey', justifyContent: 'center', alignItems: 'center'}}
                 onPress={closeConnection}
                 disabled={pc ? false : true}
             >
-                <Text>Create WebRTC conection and channel</Text>
+                <Text>Close conection</Text>
             </TouchableOpacity>
         </View>
     );
