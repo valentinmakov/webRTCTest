@@ -1,5 +1,5 @@
 import React from 'react';
-import {Alert, Text, View} from 'react-native';
+import {Alert, Text, TouchableOpacity, View} from 'react-native';
 import {
     EventOnCandidate,
     RTCSessionDescriptionType,
@@ -7,6 +7,9 @@ import {
     RTCPeerConnectionConfiguration,
 } from 'react-native-webrtc';
 
+/**
+ * Insert a known peer device URL here
+ */
 const PEER_DEVICE_URL: string = '';
 
 interface RTCDataChannel {
@@ -85,7 +88,7 @@ const App: React.FC = (): React.ReactElement => {
         [pc?.connectionState]
     );
 
-    const createNewConnection = async (): Promise<void> => {
+    const createNewConnection = (): void => {
         const pc: RTCPeerConnection = new RTCPeerConnection(webRTCConfig);
         setPc(pc);
         pc.onicecandidate = (event: EventOnCandidate): void => {
@@ -117,7 +120,27 @@ const App: React.FC = (): React.ReactElement => {
 
     return (
         <View style={{justifyContent: 'center', alignItems: 'center', backgroundColor: 'white', flex: 1}}>
-            <Text>WebRTC</Text>
+            <TouchableOpacity
+                style={{width: 400, height: 40, paddingBottom: 10, backgroundColor: pc ? 'grey' : 'green', justifyContent: 'center', alignItems: 'center'}}
+                onPress={createNewConnection}
+                disabled={pc ? true : false}
+            >
+                <Text>Create WebRTC conection and channel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+                style={{width: 400, height: 40, paddingBottom: 10, backgroundColor: channel ? 'green' : 'grey', justifyContent: 'center', alignItems: 'center'}}
+                onPress={closeChannel}
+                disabled={channel ? false : true}
+            >
+                <Text>Close channel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+                style={{width: 400, height: 40, paddingBottom: 10, backgroundColor: pc ? 'green' : 'grey', justifyContent: 'center', alignItems: 'center'}}
+                onPress={closeConnection}
+                disabled={pc ? false : true}
+            >
+                <Text>Create WebRTC conection and channel</Text>
+            </TouchableOpacity>
         </View>
     );
 };
