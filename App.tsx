@@ -28,19 +28,26 @@ const initConnectionCreation = async (
   peerConnection: RTCPeerConnection,
   setChannel: React.Dispatch<React.SetStateAction<RTCDataChannel | null>>,
 ): Promise<void> => {
-  const channel: RTCDataChannel = peerConnection.createDataChannel(
-    'channel',
-  ) as unknown as RTCDataChannel;
-  channel.onopen = () => {
-    Alert.alert('channel is open');
-    setChannel(channel);
-  };
-  channel.onclose = () => {
-    Alert.alert('Channel closed');
-    setChannel(null);
-  };
-  const sdp: RTCSessionDescriptionType = await peerConnection.createOffer();
-  peerConnection.setLocalDescription(sdp);
+  try {
+    const channel: RTCDataChannel = peerConnection.createDataChannel(
+      'channel',
+    ) as unknown as RTCDataChannel;
+    channel.onopen = () => {
+      Alert.alert('channel is open');
+      setChannel(channel);
+    };
+    channel.onclose = () => {
+      Alert.alert('Channel closed');
+      setChannel(null);
+    };
+    const sdp: RTCSessionDescriptionType = await peerConnection.createOffer();
+    peerConnection.setLocalDescription(sdp);
+  } catch (error) {
+    Alert.alert(
+      'Connection creation failed. Current connection state:',
+      `${peerConnection.connectionState}. Error: ${error}`,
+    );
+  }
 };
 
 const finalizeConnectionCreation = async (
@@ -77,7 +84,7 @@ const App: React.FC = (): React.ReactElement => {
   }, [pc?.connectionState]);
 
   const createNewConnection = (): void => {
-    if (!pc) {
+    if (!pc || pc.connectionState === 'closed') {
       Alert.alert('No connection is possible');
       return;
     }
