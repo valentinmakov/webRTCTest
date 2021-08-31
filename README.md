@@ -1,11 +1,11 @@
-** WebRTCTest **
+**WebRTCTest**
 
-** Install **
+**Install**
 ```
 yarn
 ```
 
-** Launch **
+**Launch**
 Android
 ```
 yarn android
